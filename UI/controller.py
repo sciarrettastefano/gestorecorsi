@@ -7,8 +7,10 @@ class Controller:
         self._view = view
         # the model, which implements the logic of the program and holds the data
         self._model = model
+        self._ddCodinsValue = None
 
     def handlePrintCorsiPD(self, e):
+        self._view.lvtxtOut.controls.clear()
         pd = self._view.ddPD.value
         if pd is None:
             # self._view.lvtxtOut.controls.append(ft.Text("Attenzione, selezionare un periodo didattico!",
@@ -24,6 +26,10 @@ class Controller:
             pdInt = 2
 
         corsiPD = self._model.getCorsiPD(pdInt)
+        if len(corsiPD) == 0: # --> controllo in caso di db vuoto e quindi model e dao che restituiscono una lista vuota
+            self._view.lvtxtOut.controls.append(ft.Text("Nessun corso trovato in questo periodo."))
+            self._view.update_page()
+            return
 
         self._view.lvtxtOut.controls.append(ft.Text(f"Corsi del {pd} periodo didattico."))
         for c in corsiPD:
@@ -31,13 +37,65 @@ class Controller:
         self._view.update_page()
 
     def handlePrintIscrittiCorsiPD(self, e):
-        pass
+        self._view.lvtxtOut.controls.clear()
+        pd = self._view.ddPD.value
+        if pd is None:
+            self._view.create_alert("Attenzione, selezionare un periodo didattico!")
+            self._view.update_page()
+            return
+
+        if pd == "I":
+            pdInt = 1
+        else:
+            pdInt = 2
+
+        corsiPDwI = self._model.getCorsiPDwithIscritti(pdInt)
+        if len(corsiPDwI) == 0:
+            self._view.lvtxtOut.controls.append(ft.Text("Nessun corso trovato in questo periodo."))
+            self._view.update_page()
+            return
+
+        self._view.lvtxtOut.controls.append(ft.Text(f"Dettagli corsi del {pd} periodo didattico."))
+        for c in corsiPDwI:
+            self._view.lvtxtOut.controls.append(ft.Text(f"{c[0]} - N Iscritti: {c[1]}"))
+
+        self._view.update_page()
 
     def handlePrintIscrittiCodins(self, e):
-        pass
+        self._view.lvtxtOut.controls.clear()
+        if self._ddCodinsValue is None: # ---> così ho l'oggetto, e non la stringa che troverei prendendo dal ddCodins (anche se qua andrebbe bene uguale)
+            self._view.create_alert("Attenzione, selezionare un corso di interesse!")
+            self._view.update_page()
+            return
+
+        studenti = self._model.getStudentiCorso(self._ddCodinsValue.codins)
+        if len(studenti) == 0:
+            self._view.lvtxtOut.controls.append(ft.Text("Nessuno studente iscritto a questo corso."))
+            self._view.update_page()
+            return
+
+        self._view.lvtxtOut.controls.append(ft.Text(f"Studenti iscritti al corso {self._ddCodinsValue}:"))
+        for s in studenti:
+            self._view.lvtxtOut.controls.append(ft.Text(s))
+        self._view.update_page()
 
     def handlePrintCDSCodins(self, e):
-        pass
+        self._view.lvtxtOut.controls.clear()
+        if self._ddCodinsValue is None:  # ---> così ho l'oggetto, e non la stringa che troverei prendendo dal ddCodins (anche se qua andrebbe bene uguale)
+            self._view.create_alert("Attenzione, selezionare un corso di interesse!")
+            self._view.update_page()
+            return
+
+        cds = self._model.getCDSofCorso(self._ddCodinsValue.codins)
+        if len(cds) == 0:
+            self._view.lvtxtOut.controls.append(ft.Text("Nessun cds offre questo corso."))
+            self._view.update_page()
+            return
+
+        self._view.lvtxtOut.controls.append(ft.Text(f"CDS che frequentano il corso {self._ddCodinsValue}:"))
+        for c in cds:
+            self._view.lvtxtOut.controls.append(ft.Text(f"CDS: {c[0]} - N Iscritti: {c[1]}"))
+        self._view.update_page()
 
     def fillddCodins(self):
         """for cod in self._model.getCodins():
